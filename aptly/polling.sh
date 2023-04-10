@@ -21,31 +21,30 @@ inotifywait -m /aptly/repo -e create -e delete |
     while read path action file; do
         if [[ "$action" == "CREATE" ]]; then
             # do something when a file is created
-    	    if echo "$file" | grep "^voyance_0.*_amd64.deb$"; then
-	        new_version=$(echo "$file" | cut -d _ -f 2)
-	        if [[ $(echo -e "$version\n$new_version" | sort -V | tail -n1) == "$new_version" ]]; then
+            if echo "$file" | grep "^voyance_0.*_amd64.deb$"; then
+                new_version=$(echo "$file" | cut -d _ -f 2)
+                if [[ $(echo -e "$version\n$new_version" | sort -V | tail -n1) == "$new_version" ]]; then
                     file_size=$(du -b $path/$file | awk '{print $1}')
                     while true; do
                         sleep 2
-		        new_size=$(du -b $path/$file | awk '{print $1}')
+                        new_size=$(du -b $path/$file | awk '{print $1}')
                         if [[ "$new_size" -eq "$file_size" ]]; then
                             echo "File transfer completed: $path/$file"
-		            break
-		        else
-		            file_size=$new_size
+                            break
+                        else
+                            file_size=$new_size
                         fi
                     done 
-
-		    echo "new file:$file version:$new_version add."
-		    if ! aptly repo list | grep "^voyance$"; then
+                    echo "new file:$file version:$new_version add."
+                    if ! aptly repo list | grep "^voyance$"; then
                         echo "Repo 'voyance' not found, creating..."
                         aptly repo create voyance
                     fi
+                    version=$new_version
                     aptly repo add voyance /aptly/repo/$file
-                    aptly snapshot create voyance-$new_version-snapshot from repo voyance
+                    aptly snapshot create voyance-$version-snapshot from repo voyance
                     aptly publish drop focal voyance
-                    aptly publish snapshot -batch=true  -distribution=$APT_DISTRIBUTION -passphrase="$GPG_PASSPHRASE" voyance-$new_version-snapshot voyance
-		    version=$new_version
+                    aptly publish snapshot -batch=true  -distribution=$APT_DISTRIBUTION -passphrase="$GPG_PASSPHRASE" voyance-$version-snapshot voyance
                     if pgrep -f "aptly serve" > /dev/null; then
                         echo "aptly process already running"
                     else
@@ -57,11 +56,21 @@ inotifywait -m /aptly/repo -e create -e delete |
         elif [[ "$action" == "DELETE" ]]; then
             echo "File $file was deleted from $path"
             # do something when a file is deleted
-    	    if echo "$file" | grep "^voyance_0.*_amd64.deb$"; then
-		del_version=$(echo "$file" | cut -d _ -f 2)
+            if echo "$file" | grep "^voyance_0.*_amd64.deb$"; then
+                del_version=$(echo "$file" | cut -d _ -f 2)
                 if [[ "$del_version" == "$version" ]]; then
-		     echo "warning current version has been delted."
-		fi
+                    echo "warning current version has been delted."
+                    target=$(find_target_version /aptly/repo)
+                    if [ -z $target ]; then
+                        echo "no version to roolback."
+                    else
+                        version=$(echo "$target" | cut -d _ -f 2)
+                        echo "roolback to version:$version."
+                        aptly publish drop focal voyance
+                        aptly publish snapshot -batch=true  -distribution=$APT_DISTRIBUTION -passphrase="$GPG_PASSPHRASE" voyance-$version-snapshot voyance
+                    fi
+                fi
             fi
         fi
+
     done

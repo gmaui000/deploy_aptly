@@ -10,7 +10,6 @@ if [[ "$1" != *.*.*.* ]]; then
   echo "WARNING: Please provide a valid ppa IP address as the first parameter."
 fi
 
-
 if [ `grep -c "${DOMAIN}" ${DNS_FILE}` -ne '0' ];then
     FROM_REG="^[0-9.]* ${DOMAIN}$"
     TO_STR="${PPA_IP} ${DOMAIN}"
