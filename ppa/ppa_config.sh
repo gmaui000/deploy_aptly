@@ -26,5 +26,8 @@ echo "deb http://$DOMAIN:40101/voyance focal main" | sudo tee /etc/apt/sources.l
 apt update
 apt search voyance
 
+#sudo crontab -e
+#0 3 * * * apt update && apt install voyance
+
 echo "Finish ."
 
