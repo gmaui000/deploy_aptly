@@ -4,7 +4,7 @@
 APT_KEY="public.key"
 DNS_FILE="/etc/hosts"
 DOMAIN="ppa.cowarobot.com"
-PPA_IP=192.168.31.114
+PPA_IP=192.168.30.179
 
 if [[ "$1" != *.*.*.* ]]; then
   echo "WARNING: Please provide a valid ppa IP address as the first parameter."
