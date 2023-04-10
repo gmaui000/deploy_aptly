@@ -1,0 +1,21 @@
+version: '3'
+services:
+  aptly:
+    container_name: aptly
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    user: root
+    privileged: true
+    environment:
+      APT_DISTRIBUTION: focal
+      APTLY_REPO: voyance
+      GPG_TTY: /dev/pts/0
+      GPG_PASSPHRASE: Cowa1234
+    volumes:
+      - ./aptly:/aptly
+      - ./aptly/.gnupg:/root/.gnupg
+      - ./aptly/.aptly.conf:/etc/aptly.conf
+    ports:
+      - "40101:8080"
+    command: [ "bash", "/aptly/bootstrap.sh" ]
