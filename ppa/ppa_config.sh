@@ -4,7 +4,7 @@
 APT_KEY="public.key"
 DNS_FILE="/etc/hosts"
 DOMAIN="ppa.cowarobot.com"
-#PPA_IP=192.168.30.179
+#PPA_IP=192.168.31.219
 PPA_IP=118.25.144.84
 
 if [[ "$1" != *.*.*.* ]]; then
@@ -38,11 +38,12 @@ fi
 echo "
 [Unit]
 Description=voyance update script
-After=network.target
+After=display-manager.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/voyance-update.sh
+ExecStart=/bin/bash /usr/local/bin/voyance-update.sh
+RemainAfterExit=yes
 
 [Install]
 WantedBy=multi-user.target
@@ -50,10 +51,31 @@ WantedBy=multi-user.target
 
 cp voyance-update.sh /usr/local/bin/ && chmod +x /usr/local/bin/voyance-update.sh
 
+echo "
+[Unit]
+Description=multi-screen script
+After=display-manager.service
+
+[Service]
+Type=oneshot
+Environment=XAUTHORITY=/run/user/1000/gdm/Xauthority
+Environment=DISPLAY=:1
+ExecStart=/bin/bash /usr/local/bin/multi-screen.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+" | tee /etc/systemd/system/multi-screen.service
+cp multi-screen.sh /usr/local/bin/ && chmod +x /usr/local/bin/multi-screen.sh
+
 systemctl daemon-reload
 systemctl enable voyance.service
 systemctl start voyance.service
 systemctl status voyance.service
+
+systemctl enable multi-screen.service
+systemctl start multi-screen.service
+systemctl status multi-screen.service
 
 echo "Finish ."
 
